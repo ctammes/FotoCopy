@@ -1,6 +1,8 @@
 package fotocopy;
 
 import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * Created with IntelliJ IDEA.
@@ -14,11 +16,21 @@ public class FotoCopyToonActies {
     private JButton btnSluit;
     protected JPanel mainPanel;
 
+    public FotoCopyToonActies() {
+        btnSluit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        });
+    }
+
     /**
      * @param tekst the txtLogtekst to append
      */
     public void setTxtLogtekst(String tekst) {
         this.txtLogtekst.append(tekst);
+        this.txtLogtekst.setCaretPosition(this.txtLogtekst.getDocument().getLength());
     }
 
     public void clearTxtLogtekst() {

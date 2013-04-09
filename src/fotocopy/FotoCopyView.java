@@ -3,8 +3,10 @@ package fotocopy;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +30,8 @@ public class FotoCopyView {
     private JList lstHoogste;
     private JPanel mainPanel;
     private JButton btnUitvoeren;
+
+    final static String COPYCMD = "cp";
 
     private static String bronFiles[];      // te kopieren bestanden
     private static String bronDir;          // brondirectory
@@ -103,13 +107,14 @@ public class FotoCopyView {
                     frame.pack();
                     frame.setVisible(true);
 
-                    FotoCopyToonActies.
-                    txtLogTekst.setText("");
+                    FotoCopyToonActies acties = new FotoCopyToonActies();
+                    acties.clearTxtLogtekst();
                     String tekst = new String();
                     for (String cmd: cmds) {
                         if (cmd != null) {
                             tekst += cmd;
-                            txtStatusTekst.setText(cmd);
+                            acties.setTxtLogtekst(cmd);
+                            frame.repaint();
                         }
                     }
                     txtStatusTekst.setText(tekst);
@@ -199,10 +204,12 @@ public class FotoCopyView {
                         String newfile = files[i].replaceAll("(\\d+)", String.format(format, nieuw));
                         if (newfile.length()>0 ) {
                             max.put(type, nieuw);
-                            cmd = String.format("copy %s/%s %s/%s\n", bronDir, files[i], doelDir, newfile);
+                            cmd = String.format("%s %s/%s %s/%s\n", COPYCMD, bronDir, files[i], doelDir, newfile);
+                            runCmd(cmd);
                         }
                     } else {                            // bestandsnaam komt niet in doel voor
-                        cmd = String.format("copy %s/%s %s/%s\n", bronDir, files[i], doelDir, files[i]);
+                        cmd = String.format("%s %s/%s %s/%s\n", COPYCMD, bronDir, files[i], doelDir, files[i]);
+                        runCmd(cmd);
                     }
                     cmds[i] = cmd;
                 }
@@ -263,6 +270,24 @@ public class FotoCopyView {
         bronDir = aBronDir;
     }
 
+    private static void runCmd(String cmd)
+    {
+        try {
+            Runtime run = Runtime.getRuntime() ;
+            Process pr = run.exec(cmd) ;
+            pr.waitFor() ;
+            BufferedReader buf = new BufferedReader( new InputStreamReader( pr.getInputStream() ) ) ;
+
+            String line;
+            while ( ( line = buf.readLine() ) != null )
+            {
+                System.out.println(line) ;
+            }
+
+        } catch(Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }
 
 class FotoFilter implements FilenameFilter {
