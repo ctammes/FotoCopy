@@ -1,5 +1,8 @@
 package fotocopy;
 
+import nl.ctammes.common.MijnIni;
+import nl.ctammes.common.MijnLog;
+
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -7,9 +10,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.InputStreamReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,19 +41,16 @@ public class FotoCopyView {
 
     final static String COPYCMD = "cp";
 
+    private static MijnIni ini = null;
+    private static String inifile = "FotoCopy.ini";
+
     private static String bronFiles[];      // te kopieren bestanden
     private static String bronDir;          // brondirectory
     private static String doelDir;          // doeldirectory
     private static Map max;                 // overzicht van soorten en hoogste nummer in doeldir (dscf, afb enz.)
 
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("FotoCopyView");
-        frame.setContentPane(new FotoCopyView().mainPanel);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLocation(200, 200);
-        frame.pack();
-        frame.setVisible(true);
-    }
+    // initialiseer logger
+    public static Logger log = Logger.getLogger(FotoCopyView.class.getName());
 
     public FotoCopyView() {
         txtBron.setText("/home/chris/chris1/chris/Foto´s");
@@ -204,11 +209,11 @@ public class FotoCopyView {
                         String newfile = files[i].replaceAll("(\\d+)", String.format(format, nieuw));
                         if (newfile.length()>0 ) {
                             max.put(type, nieuw);
-                            cmd = String.format("%s %s/%s %s/%s\n", COPYCMD, bronDir, files[i], doelDir, newfile);
+                            cmd = String.format("%s %s/%s %s/%s", COPYCMD, bronDir, files[i], doelDir, newfile);
                             runCmd(cmd);
                         }
                     } else {                            // bestandsnaam komt niet in doel voor
-                        cmd = String.format("%s %s/%s %s/%s\n", COPYCMD, bronDir, files[i], doelDir, files[i]);
+                        cmd = String.format("%s %s/%s %s/%s", COPYCMD, bronDir, files[i], doelDir, files[i]);
                         runCmd(cmd);
                     }
                     cmds[i] = cmd;
@@ -273,6 +278,7 @@ public class FotoCopyView {
     private static void runCmd(String cmd)
     {
         try {
+            log.info(cmd);
             Runtime run = Runtime.getRuntime() ;
             Process pr = run.exec(cmd) ;
             pr.waitFor() ;
@@ -285,9 +291,41 @@ public class FotoCopyView {
             }
 
         } catch(Exception e) {
-            System.out.println(e.getMessage());
+            log.severe(e.getMessage());
         }
     }
+
+    public static void main(String[] args) {
+        // logfile per maand
+        DateFormat df = new SimpleDateFormat("yyMM");
+        String datum = df.format(new Date());
+        String logDir = ".";
+        String logNaam = String.format("Fotocopy_%s.log", datum);
+
+        try {
+            MijnLog mijnlog = new MijnLog(logDir, logNaam, true);
+            log = mijnlog.getLog();
+            log.setLevel(Level.INFO);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        // inifile lezen of initieel vullen
+        if (new File(inifile).exists()) {
+            ini = new MijnIni(inifile);
+        } else {
+            ini = new MijnIni(inifile);
+            log.info("Inifile " + inifile + " aangemaakt");
+        }
+
+        JFrame frame = new JFrame("FotoCopyView");
+        frame.setContentPane(new FotoCopyView().mainPanel);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocation(200, 200);
+        frame.pack();
+        frame.setVisible(true);
+    }
+
 }
 
 class FotoFilter implements FilenameFilter {
